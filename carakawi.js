@@ -1,3 +1,10 @@
+/**
+ * CARAKAWI.JS
+ * Transliterasi Aksara Jawa Cara Kawi (Mardi Kawi)
+ * Penyesuaian aturan r mati di tengah kata: tidak merangkap konsonan ha, nga, nya.
+ * Penyesuaian r mati + ya: Aksara ra diberi pasangan untuk membentuk Repha (ꦫ꧀) dan ya didobel menggunakan pengkal (ꦪꦾ).
+ */
+
 const textInput = document.getElementById('textInput');
 const previewOutput = document.getElementById('previewOutput');
 const fontSelect = document.getElementById('fontSelect');
@@ -9,7 +16,6 @@ const charCount = document.getElementById('charCount');
 const copyBtn = document.getElementById('copyBtn');
 const clearBtn = document.getElementById('clearBtn');
 
-// Map Konsonan Mardi Kawi dengan Murda sesuai kaidah Sriwedari (N, K, T, S, P, G, B, J, NY)
 const CONS_MAP = {
     'th': 'ꦛ', 'dh': 'ꦝ', 'ny': 'ꦚ', 'ng': 'ꦔ',
     'TH': 'ꦜ', 'DH': 'ꦞ', 'NY': 'ꦘ', 'Ny': 'ꦘ', 'NG': 'ꦔ',
@@ -19,7 +25,7 @@ const CONS_MAP = {
     'h':'ꦲ', 'n':'ꦤ', 'c':'ꦕ', 'r':'ꦫ', 'k':'ꦏ',
     'd':'ꦢ', 't':'ꦠ', 's':'ꦱ', 'w':'ꦮ', 'l':'ꦭ',
     'p':'ꦥ', 'j':'ꦗ', 'y':'ꦪ', 'm':'ꦩ', 'g':'ꦒ', 'b':'ꦧ',
-    'H':'ꦲ', 'N':'ꦟ', 'C':'ꦖ', 'R':'ꦫ', 'K':'ꦑ',
+    'H':'ꦲ', 'N':'ꦟ', 'C':'ꦖ', 'R':'ꦬ', 'K':'ꦑ',
     'D':'ꦝ', 'T':'ꦡ', 'S':'ꦯ', 'W':'ꦮ', 'L':'ꦭ',
     'J':'ꦙ', 'Y':'ꦪ', 'M':'ꦩ', 'G':'ꦓ', 'B':'ꦨ', 'P':'ꦦ',
     'f': 'ꦥ', 'v': 'ꦮ', 'z': 'ꦗ', 'dz': 'ꦢ'
@@ -27,7 +33,7 @@ const CONS_MAP = {
 
 function getWarga(char) {
     if (['ꦕ','ꦖ','ꦗ','ꦙ','ꦚ','ꦯ','ꦪ'].includes(char)) return 'talawya';
-    if (['ꦛ','ꦜ','ꦝ','ꦞ','ꦟ','ꦰ','ꦫ'].includes(char)) return 'murdhanya';
+    if (['ꦛ','ꦜ','ꦝ','ꦞ','ꦟ','ꦰ','ꦬ','ꦫ'].includes(char)) return 'murdhanya';
     if (['ꦠ','ꦡ','ꦢ','ꦣ','ꦤ','ꦱ','ꦭ'].includes(char)) return 'dantya';
     if (['ꦏ','ꦑ','ꦒ','ꦓ','ꦔ','ꦲ'].includes(char)) return 'kanthya';
     if (['ꦥ','ꦦ','ꦧ','ꦨ','ꦩ','ꦮ'].includes(char)) return 'osthya';
@@ -36,7 +42,6 @@ function getWarga(char) {
 
 function matchVowel(str, idx) {
     let sub2 = str.substr(idx, 2);
-    // Tambahan deteksi Ix dan ix untuk I Kawi (ꦅ)
     if (['aa', 'ii', 'uu', 'ai', 'au', 'AA', 'II', 'UU', 'AI', 'AU', "e'", 'ex', 'Ix', 'ix'].includes(sub2)) {
         return { val: sub2, len: 2 };
     }
@@ -52,33 +57,33 @@ function getSandhanganVowel(v) {
     if (v === 'u' || v === 'U') return 'ꦸ';
     if (v === 'é' || v === 'è' || v === 'É' || v === 'È' || v === "e'" || v === 'ex') return 'ꦺ';
     if (v === 'o' || v === 'O') return 'ꦺꦴ';
-    if (v === 'e' || v === 'E') return 'ꦼ'; // Sandhangan pepet (E = pepet)
+    if (v === 'e' || v === 'E') return 'ꦼ';
     if (v === 'aa' || v === 'AA') return 'ꦴ';
     if (v === 'ii' || v === 'II') return 'ꦷ';
     if (v === 'uu' || v === 'UU') return 'ꦹ';
     if (v === 'ai' || v === 'AI') return 'ꦻ';
     if (v === 'au' || v === 'AU') return 'ꦻꦴ';
-    if (v === 'Ix' || v === 'ix') return ''; // I Kawi tidak memiliki bentuk sandhangan mandiri
+    if (v === 'Ix' || v === 'ix') return '';
     return '';
 }
 
 function getMandarinVowel(v) {
     const isCapital = (v === v.toUpperCase() && v !== v.toLowerCase() && v !== "e'" && v !== "ex" && v !== 'Ix' && v !== 'ix');
     if (v === "e'" || v === "ex") return 'ꦲꦺ';
-    if (v === 'Ix' || v === 'ix') return 'ꦅ'; // I Kawi
+    if (v === 'Ix' || v === 'ix') return 'ꦅ';
 
     if (isCapital) {
         if (v === 'A') return 'ꦄ';
         if (v === 'AA') return 'ꦄꦴ';
-        if (v === 'I') return 'ꦆ'; // Swara I Sriwedari (ꦆ)
-        if (v === 'II') return 'ꦇ'; // Swara I Dirgha (ꦇ)
+        if (v === 'I') return 'ꦆ';
+        if (v === 'II') return 'ꦇ';
         if (v === 'U') return 'ꦈ';
-        if (v === 'UU') return 'ꦈꦴ'; // Swara U Dirgha
-        if (v === 'E') return 'ꦄꦼ'; // E Pepet Swara (ꦄꦼ)
-        if (v === 'É' || v === 'È') return 'ꦌ'; // E Taling Swara
+        if (v === 'UU') return 'ꦈꦴ';
+        if (v === 'E') return 'ꦄꦼ';
+        if (v === 'É' || v === 'È') return 'ꦌ';
         if (v === 'O') return 'ꦎ';
-        if (v === 'AI') return 'ꦍ'; // AI Dirgha
-        if (v === 'AU') return 'ꦎꦴ'; // AU Dirgha
+        if (v === 'AI') return 'ꦍ';
+        if (v === 'AU') return 'ꦎꦴ';
         return 'ꦄ';
     } else {
         if (v === 'a') return 'ꦲ';
@@ -97,6 +102,8 @@ function getMandarinVowel(v) {
 }
 
 function matchConsonant(str, idx) {
+    let sub3 = str.substr(idx, 3);
+    if (CONS_MAP[sub3]) return { char: CONS_MAP[sub3], len: 3, key: sub3.toLowerCase() };
     let sub2 = str.substr(idx, 2);
     if (CONS_MAP[sub2]) return { char: CONS_MAP[sub2], len: 2, key: sub2.toLowerCase() };
     let sub1 = str.substr(idx, 1);
@@ -110,7 +117,7 @@ function tokenize(rawStr) {
 
     for (let i = 0; i < rawStr.length; i++) {
         let c = rawStr[i];
-        if (/[a-zA-ZéèÉÈ0-9\-\+_\']/.test(c)) {
+        if (/[a-zA-ZéèÉÈ0-9\-\+_'\~!\#\^\[\]\*]/.test(c)) {
             currentWord += c;
         } else {
             if (currentWord) {
@@ -140,6 +147,24 @@ function transliterateKawi(rawText) {
     if (!rawText) return '';
     
     rawText = processMacros(rawText);
+
+    rawText = rawText
+        .replace(/\|\|/g, '\uA9CB')
+        .replace(/\|/g, '\uA9CA')
+        .replace(/\(\(/g, '\uA9C1')         .replace(/\)\)/g, '\uA9C2')
+        .replace(/<_/g, '\uA9C3')
+        .replace(/<>/g, '\uA9C4')
+        .replace(/>\^/g, '\uA9C5')
+        .replace(/\(o\)/g, '\uA9C6')
+        .replace(/:/g, '\uA9C7')
+        .replace(/\[\\/g, '\uA9CC')         .replace(/\\\]/g, '\uA9CD')
+        .replace(/\^2/g, '\uA9CE')
+        .replace(/_2/g, '\uA9CF')
+        .replace(/~~/g, '\uA9DE')
+        .replace(/##/g, '\uA9DF')
+        .replace(/\^3/g, '\uA980')
+        .replace(/\+3/g, '\uA9B3');
+
     let tokens = tokenize(rawText);
     let result = '';
 
@@ -168,7 +193,7 @@ function transliterateKawi(rawText) {
                 nextWordToken = tokens[nt];
                 break;
             }
-            if (tokens[nt].type === 'sep' && (tokens[nt].val === '.' || tokens[nt].val === ',' || tokens[nt].val === '\n')) {
+            if (tokens[nt].type === 'sep' && tokens[nt].val !== ' ') {
                 break;
             }
         }
@@ -196,7 +221,7 @@ function transliterateKawi(rawText) {
             if (c >= '0' && c <= '9') {
                 let numStr = '';
                 while (i < word.length && word[i] >= '0' && word[i] <= '9') {
-                    const numMap = {'0':'ꧏ','1':'꧑','2':'꧒','3':'꧓','4':'꧔','5':'꧕','6':'꧖','7':'꧗','8':'꧘','9':'꧙'};
+                    const numMap = {'0':'꧐','1':'꧑','2':'꧒','3':'꧓','4':'꧔','5':'꧕','6':'꧖','7':'꧗','8':'꧘','9':'꧙'};
                     numStr += numMap[word[i]];
                     i++;
                 }
@@ -204,7 +229,6 @@ function transliterateKawi(rawText) {
                 continue;
             }
 
-            // --- Eksekusi Makro Vokal Panjang (Dirgha) Kawi REE & LEE ---
             if (word.substr(i, 3).toLowerCase() === 'ree') {
                 let isStartOfWord = (i === 0);
                 let prevCharIsVowel = (i > 0 && matchVowel(word, i - 1));
@@ -227,7 +251,6 @@ function transliterateKawi(rawText) {
                 }
             }
 
-            // --- Eksekusi Makro RE & LE ---
             if (word.substr(i, 2).toLowerCase() === 're') {
                 let isStartOfWord = (i === 0);
                 let prevCharIsVowel = (i > 0 && matchVowel(word, i - 1));
@@ -296,7 +319,9 @@ function transliterateKawi(rawText) {
                 if (cons.key === 'r') rSeenInWord = true;
 
                 let handledWyanjana = false;
-                if (nextIdx < word.length) {
+
+                // Aksara Ra tidak boleh diberi pasangan/sandhangan wyanjana (pengkal/cakra/cakra keret/nga lelet)
+                if (cons.key !== 'r' && nextIdx < word.length) {
                     let nextConsTemp2 = matchConsonant(word, nextIdx);
 
                     if (nextConsTemp2 && nextConsTemp2.key === 'r') {
@@ -425,9 +450,48 @@ function transliterateKawi(rawText) {
                     continue;
                 }
 
+                // --- PENANGANAN KONSONAN R MATI DI TENGAH KATA (KHUSUS KAWI/REPHA + OVERRIDE A, B, C) ---
                 if (cons.key === 'r') {
                     if (!isWordEnd) {
+                        // Menggunakan r diberi pasangan (ꦫ꧀) dengan struktur penyambungan asli
                         result += consChar + '꧀';
+
+                        // 1. PENDEKATAN B: Pasangan Kustom Eksplisit [C1*C2]
+                        let handledOverrideB = false;
+                        if (word[peekIdx] === '[') {
+                            let closeBracketIdx = word.indexOf(']', peekIdx);
+                            if (closeBracketIdx !== -1) {
+                                let content = word.substring(peekIdx + 1, closeBracketIdx);
+                                let parts = content.split('*');
+                                if (parts.length === 2) {
+                                    let c1Match = matchConsonant(parts[0], 0);
+                                    let c2Match = matchConsonant(parts[1], 0);
+                                    if (c1Match && c2Match) {
+                                        let afterBracketIdx = closeBracketIdx + 1;
+                                        let vMatch = matchVowel(word, afterBracketIdx);
+                                        let vStr = vMatch ? getSandhanganVowel(vMatch.val) : '';
+                                        
+                                        result += c1Match.char + '꧀' + c2Match.char + vStr;
+                                        i = afterBracketIdx + (vMatch ? vMatch.len : 0);
+                                        lastConsKey = c2Match.key;
+                                        lastConsIsMati = !vMatch;
+                                        handledOverrideB = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (handledOverrideB) continue;
+
+                        // 2. PENDEKATAN A (~, !) & PENDEKATAN C (#, ^)
+                        let overrideType = null;
+                        if (word[peekIdx] === '~' || word[peekIdx] === '!') {
+                            overrideType = 'A';
+                            peekIdx++;
+                        } else if (word[peekIdx] === '#' || word[peekIdx] === '^') {
+                            overrideType = 'C';
+                            peekIdx++;
+                        }
+
                         let nextConsTemp = matchConsonant(word, peekIdx);
 
                         if (nextConsTemp) {
@@ -443,16 +507,30 @@ function transliterateKawi(rawText) {
 
                             let doubleIt = true;
                             
-                            if (nextConsTemp.key === 'n' || nextConsTemp.key === 'N' || consChar2_1.includes('ꦟ')) {
-                                consChar2_1 = consChar2_1.replace('ꦤ', 'ꦟ');
-                                consChar2_2 = consChar2_2.replace('ꦟ', 'ꦤ');
-                            } 
-                            else if (nextConsTemp.key === 's' || nextConsTemp.key === 'sh' || consChar2_1.includes('ꦰ')) {
-                                consChar2_1 = consChar2_1.replace('ꦱ', 'ꦰ');
-                                doubleIt = false;
-                            } 
-                            else if (consChar2_1.includes('ꦡ')) {
-                                doubleIt = false;
+                            if (overrideType === 'A') {
+                                doubleIt = false; // Batal double, paksa Dantya/Single Biasa
+                                const dantyaMap = {'ꦟ':'ꦤ', 'ꦡ':'ꦠ', 'ꦣ':'ꦢ', 'ꦦ':'ꦥ', 'ꦨ':'ꦧ', 'ꦑ':'ꦏ', 'ꦓ':'ꦒ', 'ꦯ':'ꦱ', 'ꦰ':'ꦱ', 'ꦖ':'ꦕ', 'ꦙ':'ꦗ', 'ꦜ':'ꦛ', 'ꦞ':'ꦝ'};
+                                consChar2_1 = dantyaMap[consChar2_1] || consChar2_1;
+                            } else if (overrideType === 'C') {
+                                doubleIt = false; // Batal double, paksa Mahaprana/Murda Single
+                                const murdaMap = {'ꦤ':'ꦟ', 'ꦠ':'ꦡ', 'ꦢ':'ꦣ', 'ꦥ':'ꦦ', 'ꦧ':'ꦨ', 'ꦏ':'ꦑ', 'ꦒ':'ꦓ', 'ꦱ':'ꦯ', 'ꦕ':'ꦖ', 'ꦗ':'ꦙ', 'ꦛ':'ꦜ', 'ꦝ':'ꦞ'};
+                                consChar2_1 = murdaMap[consChar2_1] || consChar2_1;
+                            } else {
+                                // Pengecualian: TIDAK dirangkap jika disusul ha, nga, nya
+                                if (['h', 'H', 'ng', 'NG', 'ny', 'NY', 'Ny'].includes(nextConsTemp.key)) {
+                                    doubleIt = false;
+                                }
+                                else if (nextConsTemp.key === 'n' || nextConsTemp.key === 'N' || consChar2_1.includes('ꦟ')) {
+                                    consChar2_1 = consChar2_1.replace('ꦤ', 'ꦟ');
+                                    consChar2_2 = consChar2_2.replace('ꦟ', 'ꦤ');
+                                } 
+                                else if (nextConsTemp.key === 's' || nextConsTemp.key === 'sh' || consChar2_1.includes('ꦰ')) {
+                                    consChar2_1 = consChar2_1.replace('ꦱ', 'ꦰ');
+                                    doubleIt = false;
+                                } 
+                                else if (consChar2_1.includes('ꦡ')) {
+                                    doubleIt = false;
+                                }
                             }
                             
                             let cons2Idx = doubleNextIdx;
@@ -462,7 +540,13 @@ function transliterateKawi(rawText) {
                             if (v2Match) {
                                 let v2 = v2Match.val;
                                 if (doubleIt) {
-                                    result += consChar2_1 + '꧀' + consChar2_2 + getSandhanganVowel(v2);
+                                    if (nextConsTemp.key === 'y') {
+                                        // Khusus ya yang didobel: gunakan pengkal sebagai pasangannya
+                                        result += consChar2_1 + 'ꦾ' + getSandhanganVowel(v2);
+                                    } else {
+                                        // Konsonan selain ya
+                                        result += consChar2_1 + '꧀' + consChar2_2 + getSandhanganVowel(v2);
+                                    }
                                 } else {
                                     result += consChar2_1 + getSandhanganVowel(v2);
                                 }
@@ -470,7 +554,11 @@ function transliterateKawi(rawText) {
                                 lastConsIsMati = false;
                             } else {
                                 if (doubleIt) {
-                                    result += consChar2_1 + '꧀' + consChar2_2 + '꧀';
+                                    if (nextConsTemp.key === 'y') {
+                                        result += consChar2_1 + 'ꦾ꧀';
+                                    } else {
+                                        result += consChar2_1 + '꧀' + consChar2_2 + '꧀';
+                                    }
                                 } else {
                                     result += consChar2_1 + '꧀';
                                 }
@@ -491,7 +579,7 @@ function transliterateKawi(rawText) {
                             nextWordToken.val = nextWordToken.val.substr(crossVowel.len);
                             lastConsIsMati = false;
                         } else {
-                            result += 'ꦫ꧀';
+                            result += 'ꦫ꧀'; // Kawi di akhir kata tetap menggunakan Pangkon (ꦫ꧀)
                             lastConsIsMati = true;
                         }
                         i = nextIdx;
@@ -612,42 +700,57 @@ function transliterateKawi(rawText) {
 }
 
 function updatePreview() {
+    if (!textInput || !previewOutput) return;
     const latinText = textInput.value;
     const jawaText = transliterateKawi(latinText);
     previewOutput.textContent = jawaText;
-    charCount.textContent = `Jumlah Karakter: ${jawaText.length}`;
+    if (charCount) charCount.textContent = `Jumlah Karakter: ${jawaText.length}`;
 }
 
-fontSelect.addEventListener('change', (e) => {
-    previewOutput.style.fontFamily = `'${e.target.value}', sans-serif`;
-});
-
-textInput.addEventListener('input', updatePreview);
-
-fontSizeRange.addEventListener('input', (e) => {
-    const size = e.target.value;
-    fontSizeVal.textContent = size;
-    previewOutput.style.fontSize = size + 'px';
-});
-
-lineHeightRange.addEventListener('input', (e) => {
-    const height = e.target.value;
-    lineHeightVal.textContent = height;
-    previewOutput.style.lineHeight = height;
-});
-
-copyBtn.addEventListener('click', () => {
-    const textToCopy = previewOutput.textContent;
-    if (!textToCopy) return;
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        alert('Aksara Jawa berhasil disalin ke papan klip.');
+if (fontSelect) {
+    fontSelect.addEventListener('change', (e) => {
+        if (previewOutput) previewOutput.style.fontFamily = `'${e.target.value}', sans-serif`;
     });
-});
+}
 
-clearBtn.addEventListener('click', () => {
-    textInput.value = '';
+if (textInput) {
+    textInput.addEventListener('input', updatePreview);
+}
+
+if (fontSizeRange) {
+    fontSizeRange.addEventListener('input', (e) => {
+        const size = e.target.value;
+        if (fontSizeVal) fontSizeVal.textContent = size;
+        if (previewOutput) previewOutput.style.fontSize = size + 'px';
+    });
+}
+
+if (lineHeightRange) {
+    lineHeightRange.addEventListener('input', (e) => {
+        const height = e.target.value;
+        if (lineHeightVal) lineHeightVal.textContent = height;
+        if (previewOutput) previewOutput.style.lineHeight = height;
+    });
+}
+
+if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+        const textToCopy = previewOutput ? previewOutput.textContent : '';
+        if (!textToCopy) return;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert('Aksara Jawa berhasil disalin ke papan klip.');
+        });
+    });
+}
+
+if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+        if (textInput) textInput.value = '';
+        updatePreview();
+        if (textInput) textInput.focus();
+    });
+}
+
+if (textInput && previewOutput) {
     updatePreview();
-    textInput.focus();
-});
-
-updatePreview();
+}

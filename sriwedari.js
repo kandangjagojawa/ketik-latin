@@ -1,3 +1,10 @@
+/**
+ * SRIWEDARI.JS
+ * Modul Transliterasi Aksara Jawa Paugeran Sriwedari (Murni 1926).
+ * Perbaikan: Pengelompokan vokal hiatus (é/è -> h), Anuswara Tancap lookbehind,
+ * konversi Warga Talawya otomatis (nc/nj -> nyc/nyj), serta koreksi Tembung Dwipurwa.
+ */
+
 const KAMUS_AKSARA = {
     'h':'ꦲ', 'n':'ꦤ', 'c':'ꦕ', 'r':'ꦫ', 'k':'ꦏ',
     'd':'ꦢ', 't':'ꦠ', 's':'ꦱ', 'w':'ꦮ', 'l':'ꦭ',
@@ -22,6 +29,7 @@ const ANGKA = ['꧐','꧑','꧒','꧓','꧔','꧕','꧖','꧗','꧘','꧙'];
 
 function togglePedoman() {
     let p = document.getElementById('pedoman-section');
+    if (!p) return;
     if (p.style.display === 'none' || p.style.display === '') {
         p.style.display = 'block';
         p.scrollIntoView({ behavior: 'smooth' });
@@ -31,81 +39,113 @@ function togglePedoman() {
 }
 
 function scrollToParamasastra() {
-    document.getElementById('paramasastra-app').scrollIntoView({ behavior: 'smooth' });
+    let el = document.getElementById('paramasastra-app');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
 function scrollToDwipurwa() {
-    document.getElementById('dwipurwa-app').scrollIntoView({ behavior: 'smooth' });
+    let el = document.getElementById('dwipurwa-app');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
 function ubahFont() {
-    let fontTerpilih = document.getElementById('fontSelect').value;
-    document.getElementById('outputJawa').style.fontFamily = fontTerpilih;
-    document.getElementById('outParamJawa').style.fontFamily = fontTerpilih;
-    if(document.getElementById('outDwipurwaJawa')) {
-        document.getElementById('outDwipurwaJawa').style.fontFamily = fontTerpilih;
-    }
+    let fontSel = document.getElementById('fontSelect');
+    if (!fontSel) return;
+    let fontTerpilih = fontSel.value;
+    let outJawa = document.getElementById('outputJawa');
+    let outParam = document.getElementById('outParamJawa');
+    let outDwi = document.getElementById('outDwipurwaJawa');
+
+    if (outJawa) outJawa.style.fontFamily = fontTerpilih;
+    if (outParam) outParam.style.fontFamily = fontTerpilih;
+    if (outDwi) outDwi.style.fontFamily = fontTerpilih;
 }
 
 function ubahUkuranFont() {
-    let ukuran = document.getElementById('fontSizeSlider').value;
-    document.getElementById('outputJawa').style.fontSize = ukuran + 'rem';
+    let slider = document.getElementById('fontSizeSlider');
+    if (!slider) return;
+    let ukuran = slider.value;
+    let outJawa = document.getElementById('outputJawa');
+    if (outJawa) outJawa.style.fontSize = ukuran + 'rem';
 }
 
 function ubahJarakBaris() {
-    let lineH = document.getElementById('lineHeightSlider').value;
-    document.getElementById('outputJawa').style.lineHeight = lineH;
-    document.getElementById('outParamJawa').style.lineHeight = lineH;
-    if(document.getElementById('outDwipurwaJawa')) {
-        document.getElementById('outDwipurwaJawa').style.lineHeight = lineH;
-    }
+    let lineH = document.getElementById('lineHeightSlider');
+    if (!lineH) return;
+    let val = lineH.value;
+    let outJawa = document.getElementById('outputJawa');
+    let outParam = document.getElementById('outParamJawa');
+    let outDwi = document.getElementById('outDwipurwaJawa');
+
+    if (outJawa) outJawa.style.lineHeight = val;
+    if (outParam) outParam.style.lineHeight = val;
+    if (outDwi) outDwi.style.lineHeight = val;
 }
 
 function hapusSemua() {
-    document.getElementById('inputLatin').value = '';
+    let inp = document.getElementById('inputLatin');
+    if (inp) inp.value = '';
     prosesTransliterasi();
 }
 
 function salinAksara() {
-    let teksAksara = document.getElementById('outputJawa').innerText;
+    let el = document.getElementById('outputJawa');
+    if (!el) return;
+    let teksAksara = el.innerText;
     if (!teksAksara) return;
     navigator.clipboard.writeText(teksAksara).then(() => {
         let btn = document.getElementById('btnSalin');
-        let originalText = btn.innerText;
-        btn.innerText = 'Tersalin!';
-        setTimeout(() => { btn.innerText = originalText; }, 2000);
+        if (btn) {
+            let originalText = btn.innerText;
+            btn.innerText = 'Tersalin!';
+            setTimeout(() => { btn.innerText = originalText; }, 2000);
+        }
     });
 }
 
 function salinParamLatin() {
-    let teksLatin = document.getElementById('outParamLatin').value;
+    let el = document.getElementById('outParamLatin');
+    if (!el) return;
+    let teksLatin = el.value;
     if (!teksLatin) return;
     navigator.clipboard.writeText(teksLatin);
 }
 
 function salinParamJawa() {
-    let teksAksara = document.getElementById('outParamJawa').innerText;
+    let el = document.getElementById('outParamJawa');
+    if (!el) return;
+    let teksAksara = el.innerText;
     if (!teksAksara) return;
     navigator.clipboard.writeText(teksAksara).then(() => {
         let btn = document.getElementById('btnSalinParam');
-        let originalText = btn.innerText;
-        btn.innerText = 'Tersalin!';
-        setTimeout(() => { btn.innerText = originalText; }, 2000);
+        if (btn) {
+            let originalText = btn.innerText;
+            btn.innerText = 'Tersalin!';
+            setTimeout(() => { btn.innerText = originalText; }, 2000);
+        }
     });
 }
 
 function updateParamFromManualInput() {
-    let val = document.getElementById('outParamLatin').value;
-    document.getElementById('outParamJawa').innerText = transliterasiKalimat(val);
+    let inp = document.getElementById('outParamLatin');
+    let out = document.getElementById('outParamJawa');
+    if (inp && out) {
+        out.innerText = transliterasiKalimat(inp.value);
+    }
 }
 
 function prosesDwipurwa() {
-    let dasarRaw = document.getElementById('inDwipurwa').value.trim();
+    let inDwi = document.getElementById('inDwipurwa');
+    let outLat = document.getElementById('outDwipurwaLatin');
+    let outJaw = document.getElementById('outDwipurwaJawa');
+    if (!inDwi) return;
+
+    let dasarRaw = inDwi.value.trim();
     let dasar = dasarRaw.replace(/e'/g, 'é').replace(/E'/g, 'É').toLowerCase();
 
-    if(!dasar) {
-        document.getElementById('outDwipurwaLatin').value = "";
-        document.getElementById('outDwipurwaJawa').innerHTML = "";
+    if (!dasar) {
+        if (outLat) outLat.value = "";
+        if (outJaw) outJaw.innerHTML = "";
         return;
     }
 
@@ -136,43 +176,61 @@ function prosesDwipurwa() {
         resultLatin = prefix + dasar;
     }
 
-    document.getElementById('outDwipurwaLatin').value = resultLatin;
-    document.getElementById('outDwipurwaJawa').innerText = transliterasiKalimat(resultLatin);
+    if (outLat) outLat.value = resultLatin;
+    if (outJaw) outJaw.innerText = transliterasiKalimat(resultLatin);
 }
 
 function salinDwipurwaLatin() {
-    let teksLatin = document.getElementById('outDwipurwaLatin').value;
+    let el = document.getElementById('outDwipurwaLatin');
+    if (!el) return;
+    let teksLatin = el.value;
     if (!teksLatin) return;
     navigator.clipboard.writeText(teksLatin);
 }
 
 function salinDwipurwaJawa() {
-    let teksAksara = document.getElementById('outDwipurwaJawa').innerText;
+    let el = document.getElementById('outDwipurwaJawa');
+    if (!el) return;
+    let teksAksara = el.innerText;
     if (!teksAksara) return;
     navigator.clipboard.writeText(teksAksara).then(() => {
         let btn = document.getElementById('btnSalinDwipurwa');
-        let originalText = btn.innerText;
-        btn.innerText = 'Tersalin!';
-        setTimeout(() => { btn.innerText = originalText; }, 2000);
+        if (btn) {
+            let originalText = btn.innerText;
+            btn.innerText = 'Tersalin!';
+            setTimeout(() => { btn.innerText = originalText; }, 2000);
+        }
     });
 }
 
 function updateDwipurwaFromManualInput() {
-    let val = document.getElementById('outDwipurwaLatin').value;
-    document.getElementById('outDwipurwaJawa').innerText = transliterasiKalimat(val);
+    let inp = document.getElementById('outDwipurwaLatin');
+    let out = document.getElementById('outDwipurwaJawa');
+    if (inp && out) {
+        out.innerText = transliterasiKalimat(inp.value);
+    }
 }
 
 function prosesParamasastra() {
-    let ater = document.getElementById('selAter').value;
-    let dasarRaw = document.getElementById('inDasar').value.trim();
+    let selAter = document.getElementById('selAter');
+    let inDasar = document.getElementById('inDasar');
+    let selPanam = document.getElementById('selPanam');
+    if (!selAter || !inDasar || !selPanam) return;
+
+    let ater = selAter.value;
+    let dasarRaw = inDasar.value.trim();
     let dasar = dasarRaw.replace(/e'/g, 'é').replace(/E'/g, 'É').toLowerCase();
-    let panam = document.getElementById('selPanam').value;
+    let panam = selPanam.value;
 
-    document.getElementById('paramWarningArea').innerHTML = "";
+    let warnArea = document.getElementById('paramWarningArea');
+    let outLat = document.getElementById('outParamLatin');
+    let outJaw = document.getElementById('outParamJawa');
 
-    if(!dasar) {
-        document.getElementById('outParamLatin').value = "";
-        document.getElementById('outParamJawa').innerHTML = "";
+    if (warnArea) warnArea.innerHTML = "";
+
+    if (!dasar) {
+        if (outLat) outLat.value = "";
+        if (outJaw) outJaw.innerHTML = "";
         return;
     }
 
@@ -191,9 +249,9 @@ function prosesParamasastra() {
     }
 
     if (errorMsg !== "") {
-        document.getElementById('paramWarningArea').innerHTML = `<div class="param-warning">⚠️ WARNING PAUGERAN: ${errorMsg}</div>`;
-        document.getElementById('outParamLatin').value = "";
-        document.getElementById('outParamJawa').innerHTML = "";
+        if (warnArea) warnArea.innerHTML = `<div class="param-warning">⚠️ WARNING PAUGERAN: ${errorMsg}</div>`;
+        if (outLat) outLat.value = "";
+        if (outJaw) outJaw.innerHTML = "";
         return;
     }
 
@@ -425,25 +483,53 @@ function prosesParamasastra() {
         }
     }
 
-    document.getElementById('outParamLatin').value = resultLatin;
-    document.getElementById('outParamJawa').innerText = transliterasiKalimat(resultLatin);
+    if (outLat) outLat.value = resultLatin;
+    if (outJaw) outJaw.innerText = transliterasiKalimat(resultLatin);
 }
 
 function prosesTransliterasi() {
-    let teksInput = document.getElementById('inputLatin').value;
+    let inp = document.getElementById('inputLatin');
+    let out = document.getElementById('outputJawa');
+    if (!inp || !out) return;
+    let teksInput = inp.value;
     let hasil = transliterasiKalimat(teksInput);
-    document.getElementById('outputJawa').innerText = hasil;
+    out.innerText = hasil;
 }
 
 function transliterasiKalimat(teks) {
     let teksDiolah = teks.replace(/e'/g, 'é').replace(/E'/g, 'É');
 
-    teksDiolah = teksDiolah.replace(/\bngg/gi, function(match) {
+    // Pre-processing Solusi A: Resolusi Sintaks Pendekatan B [C1*C2] -> C2 & Hapus Simbol Kontrol A, B, C
+    teksDiolah = teksDiolah
+        .replace(/\[[a-zA-ZéèêÉÈÊ]+\*([a-zA-ZéèêÉÈÊ]+)\]/gi, '$1')
+        .replace(/[\~!\#\^]/g, '');
+
+    // Mapping Simbol & Pada Unicode Aksara Jawa
+    teksDiolah = teksDiolah
+        .replace(/\|\|/g, '\uA9CB')
+        .replace(/\|/g, '\uA9CA')
+        .replace(/\(\(/g, '\uA9C1')
+        .replace(/\)\)/g, '\uA9C2')
+        .replace(/<_/g, '\uA9C3')
+        .replace(/<>/g, '\uA9C4')
+        .replace(/>\^/g, '\uA9C5')
+        .replace(/\(o\)/g, '\uA9C6')
+        .replace(/:/g, '\uA9C7')
+        .replace(/\[\\/g, '\uA9CC')
+        .replace(/\\\]/g, '\uA9CD')
+        .replace(/\^2/g, '\uA9CE')
+        .replace(/_2/g, '\uA9CF')
+        .replace(/~~/g, '\uA9DE')
+        .replace(/##/g, '\uA9DF')
+        .replace(/\^3/g, '\uA980')
+        .replace(/\+3/g, '\uA9B3');
+
+    teksDiolah = teksDiolah.replace(/(?<![a-zA-Za-zÀ-ÿ])ngg/gi, function(match) {
         return (match[0] === 'N' || match[0] === 'H') ? 'Hangg' : 'hangg';
     });
 
-    teksDiolah = teksDiolah.replace(/(^|[\.\?!]\s*)(mb|ndh|nd|nth|nc|nj)/gim, function(match, p1, p2) {
-        return p1 + 'ha' + p2;
+    teksDiolah = teksDiolah.replace(/(?<![a-zA-Za-zÀ-ÿ])(mb|ndh|nd|nth|nc|nj)/gim, function(match, p1) {
+        return 'ha' + p1;
     });
 
     let baris = teksDiolah.split('\n');
@@ -453,15 +539,15 @@ function transliterasiKalimat(teks) {
         
         let lineJoined = kataJawa.join(''); 
         
-        lineJoined = lineJoined.replace(/꧀ꦊ/g, '꧀ꦭꦼ');
-        lineJoined = lineJoined.replace(/꧀([ꦄꦆꦈꦌꦎ]|[ꦏꦢꦒꦗ]꦳)/g, '꧀\u200C$1');
+        lineJoined = lineJoined.replace(/꧀([\u200C\uE000]*)ꦊ/g, '꧀$1ꦭꦼ');
+        lineJoined = lineJoined.replace(/꧀([\u200C\uE000]*)([ꦄꦆꦈꦌꦎ]|[ꦏꦢꦒꦗ]꦳)/g, '꧀$1\u200C$2');
 
         lineJoined = lineJoined.replace(/([ꦀ-꧟])꧀([ꦀ-꧟])(꦳?)꧀([ꦀ-꧟])/g, function(match, p1, p2, p3, p4) {
             if (p2 === 'ꦥ' || p2 === 'ꦱ') return match; 
             return p1 + '꧀\u200C' + p2 + p3 + '꧀' + p4; 
         });
 
-        lineJoined = lineJoined.replace(/꧀ꦣ/g, '꧀ꦝ');
+        lineJoined = lineJoined.replace(/꧀([\u200C\uE000]*)ꦣ/g, '꧀$1ꦝ');
 
         return lineJoined;
     });
@@ -470,6 +556,43 @@ function transliterasiKalimat(teks) {
 
 function transliterasiKata(rawLatin) {
     if (!rawLatin) return "";
+
+    let markerMatch = rawLatin.match(/([\uE000-\uE0FF]+)$/);
+    let marker = markerMatch ? markerMatch[1] : "";
+    let cleanLatin = marker ? rawLatin.slice(0, -marker.length) : rawLatin;
+
+    return transliterasiSingleKata(cleanLatin) + marker;
+}
+
+function koreksiDwipurwa(rawLatin) {
+    if (!rawLatin) return "";
+
+    const consPattern = "(?:dh|th|ng|ny|kh|dz|gh|sy|sh|[bcdfghjklmnpqrstvwxyz])";
+    const dwipurwaRegex = new RegExp(
+        `^(${consPattern})[eêEÊ](${consPattern}(?:[rylw])?)([aiueoéèêAIUEOÉÈÊ])(.*)$`,
+        'i'
+    );
+
+    return rawLatin.replace(dwipurwaRegex, function(match, c1Prefix, c2Root, v1, rest) {
+        let baseC1 = c1Prefix.toLowerCase();
+        let baseC2 = c2Root.toLowerCase();
+
+        if (baseC2.startsWith(baseC1)) {
+            return c1Prefix + v1 + c2Root + v1 + rest;
+        }
+        return match;
+    });
+}
+
+function transliterasiSingleKata(rawLatin) {
+    if (!rawLatin) return "";
+
+    rawLatin = koreksiDwipurwa(rawLatin);
+
+    // Pre-processing Solusi A: Resolusi Sintaks Pendekatan B [C1*C2] -> C2 & Hapus Simbol Kontrol A, B, C
+    rawLatin = rawLatin
+        .replace(/\[[a-zA-ZéèêÉÈÊ]+\*([a-zA-ZéèêÉÈÊ]+)\]/gi, '$1')
+        .replace(/[\~!\#\^]/g, '');
 
     let isKataNingrat = rawLatin.toLowerCase().includes('ningrat');
 
@@ -537,34 +660,6 @@ function transliterasiKata(rawLatin) {
         return prefix + p2 + 'r' + p3 + p4; 
     });
 
-    latinProcessed = latinProcessed.replace(/([a-zA-ZéèêÉÈÊ]+)-([a-zA-ZéèêÉÈÊ]+)/g, function(match, root, suffix) {
-        if (root.toLowerCase() === suffix.toLowerCase()) return root + suffix;
-
-        let suffixLower = suffix.toLowerCase();
-        let isPepetSuffix = (suffixLower === 'aken' || suffixLower === 'kaken' || suffixLower === 'en' || suffixLower === 'nen');
-        let modSuffix = isPepetSuffix ? suffix.replace(/[eéèê]/gi, 'e') : suffix.replace(/[eéèê]/gi, 'é');
-
-        let lastChar = root.slice(-1).toLowerCase();
-        let lastTwoChars = root.slice(-2).toLowerCase();
-        let vowels = ['a','i','u','e','o','é','è','ê'];
-        
-        if ((modSuffix.toLowerCase() === 'kaké' || modSuffix.toLowerCase() === 'kaken') && vowels.includes(lastChar)) {
-            modSuffix = 'kxh' + modSuffix.substring(1); 
-        }
-
-        let firstCharSuffix = modSuffix.charAt(0).toLowerCase();
-        let consonantToDouble = "";
-
-        if (vowels.includes(firstCharSuffix)) {
-            if (['ng', 'ny', 'dh', 'th'].includes(lastTwoChars)) {
-                consonantToDouble = lastTwoChars;
-            } else if (!vowels.includes(lastChar) && lastChar !== 'y' && lastChar !== 'w') {
-                consonantToDouble = lastChar; 
-            }
-        }
-        return root + consonantToDouble + modSuffix;
-    });
-
     let wordMatchForExc = latinProcessed.match(/^([a-zA-ZéèêÉÈÊ]+)/);
     let isPrefixException = false;
     
@@ -579,7 +674,13 @@ function transliterasiKata(rawLatin) {
     if (!isPrefixException) {
         latinProcessed = latinProcessed.replace(/^(dak|tak|kok|ko|di|ka|ke)([aiueoéèê])/i, function(match, p1, p2) {
             let p1Lower = p1.toLowerCase();
-            if (p1Lower === 'ko' || p1Lower === 'di' || p1Lower === 'ka' || p1Lower === 'ke') {
+            if (p1Lower === 'di') {
+                if (p2.toLowerCase() === 'i') {
+                    return p1 + 'hx' + p2;
+                } else {
+                    return p1 + 'y' + p2;
+                }
+            } else if (p1Lower === 'ko' || p1Lower === 'ka' || p1Lower === 'ke') {
                 return p1 + 'hx' + p2;
             } else {
                 return p1.slice(0, -1) + 'kxhx' + p2;
@@ -587,11 +688,63 @@ function transliterasiKata(rawLatin) {
         });
     }
 
+    latinProcessed = latinProcessed.replace(/^(di)-([iI])/i, '$1hx$2');
+
+    // DETEKSI & PENANGANAN KHUSUS TEMBUNG DWILINGGA (KATA ULANG)
+    let dwiMatch = latinProcessed.match(/^([a-zA-ZéèêÉÈÊ]+)-([a-zA-ZéèêÉÈÊ]+)([^a-zA-ZéèêÉÈÊ]*)$/i);
+    if (dwiMatch) {
+        let root = dwiMatch[1];
+        let suffix = dwiMatch[2];
+        let rest = dwiMatch[3] || "";
+        let r = root.toLowerCase();
+        let s = suffix.toLowerCase();
+
+        if (r === s || (s.startsWith(r) && r.length >= 2)) {
+            return transliterasiSingleKata(root) + transliterasiSingleKata(suffix + rest);
+        }
+    }
+
+    // PERBAIKAN HIATUS (é/è dikelompokkan dengan vokal h)
+    latinProcessed = latinProcessed.replace(/([aAEÊaeêéèÉÈ])-([aiueoéèêAIUEOÉÈÊ])/g, '$1h$2');
+    latinProcessed = latinProcessed.replace(/([iI])-([aiueoéèêAIUEOÉÈÊ])/g, '$1y$2');
+    latinProcessed = latinProcessed.replace(/([uoUO])-([aiueoéèêAIUEOÉÈÊ])/g, '$1w$2');
+
+    while (/([a-zA-ZéèêÉÈÊ]+)-([a-zA-ZéèêÉÈÊ]+)/.test(latinProcessed)) {
+        latinProcessed = latinProcessed.replace(/([a-zA-ZéèêÉÈÊ]+)-([a-zA-ZéèêÉÈÊ]+)/g, function(match, root, suffix) {
+            let suffixLower = suffix.toLowerCase();
+            let isPepetSuffix = (suffixLower === 'aken' || suffixLower === 'kaken' || suffixLower === 'en' || suffixLower === 'nen');
+            let modSuffix = isPepetSuffix ? suffix.replace(/[eéèê]/gi, 'e') : suffix.replace(/[eéèê]/gi, 'é');
+
+            let lastChar = root.slice(-1).toLowerCase();
+            let lastTwoChars = root.slice(-2).toLowerCase();
+            let vowels = ['a','i','u','e','o','é','è','ê'];
+
+            if ((modSuffix.toLowerCase() === 'kaké' || modSuffix.toLowerCase() === 'kaken') && vowels.includes(lastChar)) {
+                modSuffix = 'kxh' + modSuffix.substring(1); 
+            }
+
+            let firstCharSuffix = modSuffix.charAt(0).toLowerCase();
+            let consonantToDouble = "";
+
+            if (['ni', 'nni', 'i'].includes(suffixLower) && vowels.includes(lastChar)) {
+                modSuffix = 'nni';
+            } else if (vowels.includes(firstCharSuffix)) {
+                if (['ng', 'ny', 'dh', 'th'].includes(lastTwoChars)) {
+                    consonantToDouble = lastTwoChars;
+                } else if (!vowels.includes(lastChar) && lastChar !== 'y' && lastChar !== 'w') {
+                    consonantToDouble = lastChar; 
+                }
+            }
+            return root + consonantToDouble + modSuffix;
+        });
+    }
+
+    // PERBAIKAN HIATUS BERURUTAN LANGSUNG
     let prevLatin = "";
     while (latinProcessed !== prevLatin) {
         prevLatin = latinProcessed;
-        latinProcessed = latinProcessed.replace(/([aeêAEÊ])([aiueoéèê])/g, '$1h$2');
-        latinProcessed = latinProcessed.replace(/([iéèIÉÈ])([aiueoéèê])/g, '$1y$2');
+        latinProcessed = latinProcessed.replace(/([aeêéèAEÊÉÈ])([aiueoéèê])/g, '$1h$2');
+        latinProcessed = latinProcessed.replace(/([iI])([aiueoéèê])/g, '$1y$2');
         latinProcessed = latinProcessed.replace(/([uoUO])([aiueoéèê])/g, '$1w$2');
     }
 
@@ -604,9 +757,10 @@ function transliterasiKata(rawLatin) {
             .replace(/ng/g, '1').replace(/Ng/g, '5').replace(/NG/g, '!')
             .replace(/ny/g, '2').replace(/Ny/g, '6').replace(/NY/g, '@')
             .replace(/dh/g, '3').replace(/Dh/g, '7').replace(/DH/g, '#')
-            .replace(/th/g, '4').replace(/Th/g, '8').replace(/TH/g, '$');
+            .replace(/th/g, '4').replace(/Th/g, '8').replace(/\$/g, 'TH');
 
-        if (!isAnuswaraHanja) {
+        let isTanpa = /^tanpa$/i.test(wordOnly);
+        if (!isAnuswaraHanja && !isTanpa) {
             token = token.replace(/a([mnMN125!6@])([bcdfghjklpqrstvwxzBCDFGHJKLPQRSTVWXZ347#8$]+)a(h?a)?$/i, 'o$1$2a$3');
         }
 
@@ -640,6 +794,15 @@ function transliterasiKata(rawLatin) {
         if (latin[i] === '.') { 
             if (res.endsWith('꧀')) { res += '꧈\u200C'; } else { res += '꧉'; }
             i++; continue; 
+        }
+
+        if (latin[i] === '-') {
+            i++; continue;
+        }
+
+        if (/[\~!\#\^\[\]\*]/.test(latin[i])) {
+            i++;
+            continue;
         }
         
         if (!/[a-zA-ZéèêÉÈÊ]/.test(latin[i])) {
@@ -772,4 +935,17 @@ function transliterasiKata(rawLatin) {
         if (c !== "") isFirstAksara = false;
     }
     return res;
+}
+
+if (typeof window !== 'undefined') {
+    window.transliterasiKalimat = transliterasiKalimat;
+    window.prosesParamasastra = prosesParamasastra;
+    window.updateParamFromManualInput = updateParamFromManualInput;
+    window.salinParamLatin = salinParamLatin;
+    window.salinParamJawa = salinParamJawa;
+    window.prosesDwipurwa = prosesDwipurwa;
+    window.salinDwipurwaLatin = salinDwipurwaLatin;
+    window.salinDwipurwaJawa = salinDwipurwaJawa;
+    window.updateDwipurwaFromManualInput = updateDwipurwaFromManualInput;
+    window.koreksiDwipurwa = koreksiDwipurwa;
 }
